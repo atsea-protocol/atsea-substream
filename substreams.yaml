@@ -1,0 +1,45 @@
+specVersion: v0.1.0
+package:
+  name: atsea_dev
+  version: v0.1.0
+
+imports:
+    ethcommon: https://spkg.io/streamingfast/ethereum-common-v0.3.0.spkg
+
+protobuf:
+  files:
+    - contract.proto
+    - sync.proto
+  importPaths:
+    - ./proto
+  excludePaths:
+    - sf/substreams
+    - google
+
+binaries:
+  default:
+    type: wasm/rust-v1
+    file: ./target/wasm32-unknown-unknown/release/substreams.wasm
+
+modules:
+
+  - name: map_events
+    kind: map
+    initialBlock: 7512170
+    blockFilter:
+      module: ethcommon:index_events
+      query:
+        string: evt_addr:0x20206658b072226e7d1bbd9c611d213358a970a6
+    inputs:
+      - source: sf.ethereum.type.v2.Block
+    output:
+      type: proto:contract.v1.Events
+
+  - name: map_pubsub
+    kind: map
+    inputs:
+      - map: map_events
+    output:
+      type: proto:sf.substreams.sink.pubsub.v1.Publish
+
+network: sepolia

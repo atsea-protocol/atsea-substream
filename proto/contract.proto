@@ -1,0 +1,82 @@
+syntax = "proto3";
+
+import "google/protobuf/timestamp.proto";
+
+package contract.v1;
+message Events {
+    repeated Atseahub_AnchorDropped atseahub_anchor_droppeds = 1;
+    repeated Atseahub_AnchorDroppedFailure atseahub_anchor_dropped_failures = 2;
+    repeated Atseahub_AtSeaUpgradeVersion atseahub_at_sea_upgrade_versions = 3;
+    repeated Atseahub_Initialized atseahub_initializeds = 4;
+    repeated Atseahub_MintSailorFailure atseahub_mint_sailor_failures = 5;
+    repeated Atseahub_OwnershipTransferred atseahub_ownership_transferreds = 6;
+    repeated Atseahub_SailorMinted atseahub_sailor_minteds = 7;
+    repeated Atseahub_Upgraded atseahub_upgradeds = 8;
+}
+message Atseahub_AnchorDropped {
+    string evt_tx_hash = 1;
+    uint32 evt_index = 2;
+    google.protobuf.Timestamp evt_block_time = 3;
+    uint64 evt_block_number = 4;
+    bytes to = 5;
+    string token_id = 6;
+    string geohash = 7;
+    string duration_hours = 8;
+}
+message Atseahub_AnchorDroppedFailure {
+    string evt_tx_hash = 1;
+    uint32 evt_index = 2;
+    google.protobuf.Timestamp evt_block_time = 3;
+    uint64 evt_block_number = 4;
+    bytes sender = 5;
+    string geohash = 6;
+    string reason = 7;
+}
+message Atseahub_AtSeaUpgradeVersion {
+    string evt_tx_hash = 1;
+    uint32 evt_index = 2;
+    google.protobuf.Timestamp evt_block_time = 3;
+    uint64 evt_block_number = 4;
+    string version = 5;
+}
+message Atseahub_Initialized {
+    string evt_tx_hash = 1;
+    uint32 evt_index = 2;
+    google.protobuf.Timestamp evt_block_time = 3;
+    uint64 evt_block_number = 4;
+    uint64 version = 5;
+}
+message Atseahub_MintSailorFailure {
+    string evt_tx_hash = 1;
+    uint32 evt_index = 2;
+    google.protobuf.Timestamp evt_block_time = 3;
+    uint64 evt_block_number = 4;
+    bytes sender = 5;
+    string name = 6;
+    string reason = 7;
+}
+message Atseahub_OwnershipTransferred {
+    string evt_tx_hash = 1;
+    uint32 evt_index = 2;
+    google.protobuf.Timestamp evt_block_time = 3;
+    uint64 evt_block_number = 4;
+    bytes previous_owner = 5;
+    bytes new_owner = 6;
+}
+message Atseahub_SailorMinted {
+    string evt_tx_hash = 1;
+    uint32 evt_index = 2;
+    google.protobuf.Timestamp evt_block_time = 3;
+    uint64 evt_block_number = 4;
+    bytes to = 5;
+    string token_id = 6;
+    string name = 7;
+}
+message Atseahub_Upgraded {
+    string evt_tx_hash = 1;
+    uint32 evt_index = 2;
+    google.protobuf.Timestamp evt_block_time = 3;
+    uint64 evt_block_number = 4;
+    bytes implementation = 5;
+}
+  
