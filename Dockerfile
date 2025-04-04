@@ -1,4 +1,3 @@
-
 FROM ubuntu:20.04
 
 # Install dependencies
@@ -20,13 +19,4 @@ COPY substreams.yaml ./substreams.yaml
 # This must match the cargo build output path
 COPY target/wasm32-unknown-unknown/release/substreams.wasm /app/substreams.wasm
 
-# Final entrypoint: run indefinite from block #8044914
-ENTRYPOINT [
-  "substreams-sink-pubsub",
-  "sink",
-  "/app/substreams.yaml",
-  "map_pubsub",
-  "anchorDroppeds",
-  "8044914:",
-  "--project=atsea-dev"
-]
+ENTRYPOINT substreams-sink-pubsub sink /app/substreams.yaml map_pubsub anchorDroppeds 8044914: --project=atsea-dev
