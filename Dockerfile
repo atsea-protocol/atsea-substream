@@ -1,5 +1,5 @@
 # ----------------------------------------
-# 1. Build Stage
+# 1. Build Stage (Go)
 # ----------------------------------------
 FROM golang:1.20 as builder
 
@@ -16,26 +16,25 @@ WORKDIR /build/substreams-sink-pubsub
 RUN go build -o /usr/local/bin/substreams-sink-pubsub ./cmd/substreams-sink-pubsub
 
 # ----------------------------------------
-# 2. Final (Runtime) Stage
+# 2. Final Runtime Stage
 # ----------------------------------------
 FROM ubuntu:20.04
 
-# Install necessary runtime dependencies
+# Install minimal dependencies
 RUN apt-get update && apt-get install -y \
     curl \
     ca-certificates \
   && rm -rf /var/lib/apt/lists/*
 
-# Copy compiled binary from builder
-COPY --from=builder /usr/local/bin/substreams-sink-pubsub /usr/local/bin/substreams-sink-pubsub
-
-# Set up working directory
 WORKDIR /app
 
-# Copy your Substreams manifest, WASM, etc. into /app
-COPY substreams.yaml /app/substreams.yaml
-COPY substreams.wasm /app/substreams.wasm
+# 1) Copy the compiled substreams-sink-pubsub binary from builder stage
+COPY --from=builder /usr/local/bin/substreams-sink-pubsub /usr/local/bin/
 
+# 2) Copy your substreams.yaml & compiled substreams.wasm from your local build
+#    Make sure you built with cargo & the wasm is present at the correct path
+COPY substreams.yaml /app/substreams.yaml
 COPY target/wasm32-unknown-unknown/release/substreams.wasm /app/substreams.wasm
+
 
 ENTRYPOINT substreams-sink-pubsub sink /app/substreams.yaml map_pubsub anchorDroppeds 8044914: --project=atsea-dev
