@@ -1,0 +1,64 @@
+name: DEV Deploy
+
+on:
+  workflow_dispatch:
+
+env:
+  PROJECT_ID: atsea-dev
+  PROJECT_NUMBER: 289816281242
+  ENV: dev
+  FUNCTION_NAME: atsea-substream
+  REGION: us-central1
+  GAR_LOCATION: us-central1-docker.pkg.dev/atsea-dev/atsea-substream-images-repo
+
+jobs:
+  build-push-artifact:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    permissions:
+      contents: 'read'
+      id-token: 'write'
+
+    steps:
+      - name: "Checkout"
+        uses: "actions/checkout@v3"
+
+      - id: auth
+        uses: google-github-actions/auth@v1
+        with:
+          token_format: 'access_token'
+          create_credentials_file: true
+          workload_identity_provider: "projects/${{env.PROJECT_NUMBER}}/locations/global/workloadIdentityPools/atsea-github-pool/providers/atsea-github-pool-provider"
+          service_account: 'atsea-github-pool@${{env.PROJECT_ID}}.iam.gserviceaccount.com'
+          access_token_lifetime: '100s'
+
+      - name: "Set up Cloud SDK"
+        uses: "google-github-actions/setup-gcloud@v1"
+        with:
+          project_id: ${{ env.PROJECT_ID }}
+          region: ${{ env.REGION }}
+
+      - name: "Use gcloud CLI"
+        run: "gcloud info"
+
+      - name: "Docker auth"
+        run: |-
+          gcloud auth configure-docker ${{ env.REGION }}-docker.pkg.dev --quiet
+      - name: Build image
+        run: docker build . --file Dockerfile --tag ${{ env.GAR_LOCATION }}/${{env.FUNCTION_NAME}}:$(echo ${{ github.sha }} | cut -c 1-7)
+        working-directory: .
+
+      - name: Push image
+        run: docker push ${{ env.GAR_LOCATION }}/${{env.FUNCTION_NAME}}:$(echo ${{ github.sha }} | cut -c 1-7)
+
+      - name: Deploy ${{env.FUNCTION_NAME}}
+        run: | 
+          gcloud run deploy ${{env.FUNCTION_NAME}} \
+          --image ${{ env.GAR_LOCATION }}/${{env.FUNCTION_NAME}}:$(echo ${{ github.sha }} | cut -c 1-7) \
+          --platform managed \
+          --region=${{ env.REGION }} \
+          --set-env-vars=PROJECT_ID=${{ env.PROJECT_ID }} \
+          --set-env-vars=FUNCTION_NAME=${{ env.FUNCTION_NAME }} \
+          --set-env-vars=ENV=${{ env.ENV }} \
+
+
