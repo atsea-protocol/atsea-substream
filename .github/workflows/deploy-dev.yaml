@@ -1,3 +1,4 @@
+
 name: DEV Deploy
 
 on:
@@ -28,8 +29,8 @@ jobs:
         with:
           token_format: 'access_token'
           create_credentials_file: true
-          workload_identity_provider: "projects/${{env.PROJECT_NUMBER}}/locations/global/workloadIdentityPools/atsea-github-pool/providers/atsea-github-pool-provider"
-          service_account: 'atsea-github-pool@${{env.PROJECT_ID}}.iam.gserviceaccount.com'
+          workload_identity_provider: "projects/${{ env.PROJECT_NUMBER }}/locations/global/workloadIdentityPools/atsea-github-pool/providers/atsea-github-pool-provider"
+          service_account: "atsea-github-pool@${{ env.PROJECT_ID }}.iam.gserviceaccount.com"
           access_token_lifetime: '100s'
 
       - name: "Set up Cloud SDK"
@@ -42,23 +43,42 @@ jobs:
         run: "gcloud info"
 
       - name: "Docker auth"
-        run: |-
+        run: |
           gcloud auth configure-docker ${{ env.REGION }}-docker.pkg.dev --quiet
+
+      # 1) Install Rust with the wasm32 target
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-unknown-unknown
+
+      # 2) Build your Substreams wasm artifact
+      - name: Cargo build (Substreams wasm)
+        run: |
+          cargo build --target wasm32-unknown-unknown --release
+          ls -lh target/wasm32-unknown-unknown/release/substreams.wasm
+
+      # 3) Build the Docker image
       - name: Build image
-        run: docker build . --file Dockerfile --tag ${{ env.GAR_LOCATION }}/${{env.FUNCTION_NAME}}:$(echo ${{ github.sha }} | cut -c 1-7)
-        working-directory: .
+        run: |
+          docker build \
+            . \
+            --file Dockerfile \
+            --tag ${{ env.GAR_LOCATION }}/${{ env.FUNCTION_NAME }}:$(echo ${{ github.sha }} | cut -c 1-7)
 
+      # 4) Push the Docker image
       - name: Push image
-        run: docker push ${{ env.GAR_LOCATION }}/${{env.FUNCTION_NAME}}:$(echo ${{ github.sha }} | cut -c 1-7)
+        run: |
+          docker push ${{ env.GAR_LOCATION }}/${{ env.FUNCTION_NAME }}:$(echo ${{ github.sha }} | cut -c 1-7)
 
-      - name: Deploy ${{env.FUNCTION_NAME}}
-        run: | 
-          gcloud run deploy ${{env.FUNCTION_NAME}} \
-          --image ${{ env.GAR_LOCATION }}/${{env.FUNCTION_NAME}}:$(echo ${{ github.sha }} | cut -c 1-7) \
-          --platform managed \
-          --region=${{ env.REGION }} \
-          --set-env-vars=PROJECT_ID=${{ env.PROJECT_ID }} \
-          --set-env-vars=FUNCTION_NAME=${{ env.FUNCTION_NAME }} \
-          --set-env-vars=ENV=${{ env.ENV }} \
-
-
+      # 5) Deploy to Cloud Run
+      - name: Deploy ${{ env.FUNCTION_NAME }}
+        run: |
+          gcloud run deploy ${{ env.FUNCTION_NAME }} \
+            --image ${{ env.GAR_LOCATION }}/${{ env.FUNCTION_NAME }}:$(echo ${{ github.sha }} | cut -c 1-7) \
+            --platform managed \
+            --region=${{ env.REGION }} \
+            --set-env-vars=PROJECT_ID=${{ env.PROJECT_ID }} \
+            --set-env-vars=FUNCTION_NAME=${{ env.FUNCTION_NAME }} \
+            --set-env-vars=ENV=${{ env.ENV }} \
+            --service-account=atsea-github-pool@${{ env.PROJECT_ID }}.iam.gserviceaccount.com
