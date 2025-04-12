@@ -22,10 +22,9 @@ binaries:
     file: ./target/wasm32-unknown-unknown/release/substreams.wasm
 
 modules:
-
   - name: map_events
     kind: map
-    initialBlock: 7512170
+    initialBlock: 8102969
     blockFilter:
       module: ethcommon:index_events
       query:
@@ -41,5 +40,6 @@ modules:
       - map: map_events
     output:
       type: proto:sf.substreams.sink.pubsub.v1.Publish
+
 
 network: sepolia

@@ -1,0 +1,5 @@
+[chains.sepolia]
+shard = "primary"
+provider = [
+    # Substreams Configuration
+    { label = "substreams", details = { type = "substreams", url = "https://sepolia.substreams.pinax.network:443", key = "$PINAX_KEY", features = ["compression"] }},
